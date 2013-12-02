@@ -10,6 +10,8 @@ import utils
 import inflection
 
 from sqlalchemy.sql import select
+from sqlalchemy.sql import and_, or_, not_
+
 from model.object import *
 
 __author__ = 'Mike Gale'
@@ -23,35 +25,16 @@ class ObjectI18n(Object):
         """ Build the object and get i18n column names """
         super().__init__(db)
 
-        # Add I18n column names
+        # Add I18n column names-
         self.cols_i18n = utils.get_col_names(db.table(self.table_name + '_i18n'))
         self.default_culture = default_culture
         self.has_cultures = []
 
-    def hydrate(self, id=None):
-        """ This method gets the object's i18n values from the db """
-
-        # Hydrate non-I18n columns first:
-        id = super().hydrate(id)
-
-        io_i18n = self.db.table('information_object_i18n')
-
-        sql = select([io_i18n]).where(io_i18n.c.id == id)
-        result = self.db.conn.execute(sql)
-        rows = result.fetchall()
-
-        for row in rows:
-            cul = row['culture']
-
-            if not hasattr(self, cul):
-                self.has_cultures.append(cul)
-                setattr(self, cul, ValuesI18n())
-
-            for col in self.cols_i18n:
-                setattr(getattr(self, cul), col, row[col])
-
     def get_str(self, all_variables=False):
-        """ Add I18n info to Object.get_str() """
+        """ Add I18n info to Object.get_str() 
+
+        :param all_variables: whether or not to print all variable even if they are None
+        """
         s = super().get_str(all_variables)
 
         for culture in self.has_cultures:
@@ -73,3 +56,29 @@ class ObjectI18n(Object):
                 s += '\n\t - %s => %.80s' % (col, val)
 
         return s
+
+    def hydrate(self, id=None):
+        """ This method gets the object's i18n values from the db 
+
+        :param id: the id of the object to hydrate, otherwise use self.id
+        """
+
+        # Hydrate non-I18n columns first:
+        id = super().hydrate(id)
+
+        obj_i18n = self.db.table(self.table_name + '_i18n')
+
+        sql = select([obj_i18n]).where(obj_i18n.c.id == id)
+        result = self.db.conn.execute(sql)
+        rows = result.fetchall()
+
+        for row in rows:
+            cul = row['culture']
+
+            if not hasattr(self, cul):
+                self.has_cultures.append(cul)
+                setattr(self, cul, ValuesI18n())
+
+            for col in self.cols_i18n:
+                setattr(getattr(self, cul), col, row[col])
+
