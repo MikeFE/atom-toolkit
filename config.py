@@ -20,7 +20,7 @@ class Config:
 
         try:
             with open(file_path, 'r') as f:
-                self.properties = json.load(f)
+                self.values = json.load(f)
         except IOError as e:
             logging.critical('Error opening config file %s: %s' % (file_path, str(e)))
             raise
@@ -35,7 +35,7 @@ class Config:
         """
         try:
             with open(file_path, 'w') as f:
-                json.dump(self.properties, f)
+                json.dump(self.values, f)
         except IOError as e:
             logging.error('Error writing config file %s: %s' % (file_path, str(e)))
             raise
@@ -44,10 +44,10 @@ class Config:
             raise
 
     def __str__(self):
-        return json.dumps(self.properties, sort_keys=True, indent=4)
+        return json.dumps(self.values, sort_keys=True, indent=4)
 
     def __getitem__(self, k):
-        return self.properties[k]
+        return self.values[k]
 
     def __setitem__(self, k, v):
-        self.properties[k] = v
+        self.values[k] = v

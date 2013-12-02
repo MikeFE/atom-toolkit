@@ -20,20 +20,16 @@ c = dbman.get_connection()
 io = dbman.table('information_object')
 ioi = dbman.table('information_object_i18n')
 
-sql = select([io, ioi], use_labels=True).where(
-    and_(
-        io.c.id == ioi.c.id,
-        ioi.c.title != None
-    )
-)
+sql = select([io.c.id]).where(io.c.id != 1)
 
 rows = c.execute(sql)
 
 n = 0
 for row in rows:
     o = InformationObject(dbman)
-    o.hydrate(row)
-    print(o)
+    o.hydrate(id=row['id'])
+    for c in o.has_cultures:
+        print(repr(getattr(o, c).__dict__))
     n += 1
-    if n == 5:
+    if n == 1:
         break
