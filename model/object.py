@@ -52,7 +52,7 @@ class Object:
         return s
 
     def __repr__(self):
-        s = "<%s" % self.table_name
+        s = '<%s' % self.table_name
         if hasattr(self, 'id'):
             s += '(id => %d)' % self.id
 
@@ -60,6 +60,9 @@ class Object:
 
     def __str__(self):
         return self.get_str(all_variables=False)
+
+    def has_i18n(self):
+        return self.table_name + '_i18n' in self.db.metadata.tables
 
     def hydrate(self, id=None):
         """ This method gets the object's values from the db """

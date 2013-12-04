@@ -28,15 +28,27 @@ class ObjectFactory:
         the result of an alchemy query
         """
 
-        # Accept underscored naming convention as well..
-        if class_name.find('_') != -1:
-            class_name = inflection.camelize(class_name)
+        if len(values) == 0:
+            raise Exception('Invalid values given to ObjectFactory!')
 
-        obj = globals()[class_name](db)
+        cls_camelized = inflection.camelize(class_name)
+        cls_underscored = inflection.underscore(class_name)
 
+        # We sometimes will enable use_labels in our queries to prevent
+        # column naming conflicts; in this situation alchemy will add
+        # 'table_name_' as a prefix:
+        prefix = cls_underscored + '_' if cls_underscored + '_' in values.keys()[0] else ''
+        
+        try:
+            if cls_underscored not in db.metadata.tables:
+                raise KeyError
+
+            obj = globals()[cls_camelized](db)
+        except KeyError as e:
+            raise Exception('ObjectFactory does not know how to build a %s' % cls_camelized)
 
         for col in obj.cols:
-            val = values['information_object_' + col] if 'information_object_' +col in values else None
+            val = values[prefix + col] if prefix + col in values else None # .get() not supported
             setattr(obj, col, val)
 
         return obj
@@ -56,15 +68,20 @@ class ObjectFactory:
 
         table_name = inflection.underscore(class_name)
         obj = db.table(table_name)
-        obj_i18n = db.table(table_name + '_i18n')
 
-        sql = select([obj, obj_i18n], use_labels=True).where(
-            and_(
-                obj.c.id == obj_i18n.c.id, 
-                obj_i18n.c.culture == culture,
-                obj.c.id.in_(ids)
+        # Check if there's an i18n to go along with specified culture
+        if table_name + '_i18n' in db.metadata.tables:
+            obj_i18n = db.table(table_name + '_i18n')
+
+            sql = select([obj, obj_i18n], use_labels=True).where(
+                and_(
+                    obj.c.id == obj_i18n.c.id, 
+                    obj_i18n.c.culture == culture,
+                    obj.c.id.in_(ids)
+                )
             )
-        )
+        else:
+            sql = select([obj]).where(obj.c.id.in_(ids))
 
         result = db.conn.execute(sql)
         rows = result.fetchall()

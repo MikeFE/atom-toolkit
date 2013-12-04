@@ -25,19 +25,22 @@ ioi = dbman.table('information_object_i18n')
 sql = select([io.c.id]).where(io.c.id != 1)
 
 rows = c.execute(sql)
+ids = [row['id'] for row in rows]
 
-print('Hydrating info objs')
+print('Hydrating %d info objects...' % len(ids))
 
-ids = []
+info_objs = ObjectFactory.get_by_ids(dbman, 'information_object', ids)
+
+print('Finished! Iterating over them...')
+
+io_list = []
 
 n = 0
-for row in rows:
-    ids.append(row['id'])
+for io in info_objs: 
+    io_list.append(io)
+
     n += 1
-    if n == 10:
-        break
-
-for io in ObjectFactory.get_by_ids(dbman, 'information_object', ids):
-    print(str(io))
-
-print('\nDone! Got %d objects' % n)
+    if n % 100 == 0:
+        sys.stdout.write('.')
+        sys.stdout.flush()
+print('Finished!')
