@@ -84,8 +84,7 @@ class ObjectFactory:
 
         :param culture: is which i18n culture to hydrate. If you need to 
         get all the i18n values for all available cultures, use hydrate instead.
-        This method is meant for getting many info objects quickly, not be
-        thorough.
+        This method is meant for getting many objects quickly, not full hydration.
         """
 
         table_name = inflection.underscore(class_name)
