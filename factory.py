@@ -74,7 +74,7 @@ class ObjectFactory:
         return obj
 
     @staticmethod
-    def get_by_ids(db, class_name, ids, culture='en'):
+    def fetch_objects(db, class_name, ids, culture='en'):
         """ Fetches multiple objects at once, this method is a generator
 
         :param class_name: the type of object to grab, e.g. 'actor'.
