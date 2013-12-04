@@ -24,6 +24,11 @@ class Object:
 
         self.db = db
         self.table_name = inflection.underscore(type(self).__name__)
+
+        # TODO: We'll need to refactor lots of this code and 
+        # make a general dict for table_name -> cols,
+        # as certain objects like Repository can have columns for
+        # repository, repository_i18n, actor, actor_i18n, object, etc...
         self.cols = utils.get_col_names(db.table(self.table_name))
         self.cols_i18n = [] # We set these later on in the children
 
@@ -73,14 +78,14 @@ class Object:
         if id is None: 
             raise Exception('object.hydrate() called without a valid id')
 
-        io = self.db.table('information_object')
+        table = self.db.table(self.table_name)
 
-        sql = select([io]).where(io.c.id == id)
+        sql = select([table]).where(table.c.id == id)
         result = self.db.conn.execute(sql)
 
         row = result.fetchone()
         if row is None:
-            raise Exception('object.hydrate() failed -- no object in the database with id: %d', id)
+            raise Exception('object.hydrate() failed -- no object in the database with id: %d' % id)
 
         for col in self.cols:
             setattr(self, col, row[col])

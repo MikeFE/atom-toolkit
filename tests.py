@@ -9,6 +9,7 @@ import db
 
 from model.object import *
 from model.information_object import *
+from model.repository import *
 from factory import *
 from sqlalchemy.sql import select
 from sqlalchemy.sql import and_, or_, not_
@@ -22,25 +23,19 @@ c = dbman.get_connection()
 io = dbman.table('information_object')
 ioi = dbman.table('information_object_i18n')
 
-sql = select([io.c.id]).where(io.c.id != 1)
+sql = select([io, ioi], use_labels=True).where(
+                and_(
+                    io.c.repository_id != None,
+                    io.c.id == ioi.c.id
+                )
+            ).limit(1)
 
-rows = c.execute(sql)
-ids = [row['id'] for row in rows]
+result = c.execute(sql)
+io_with_repo = ObjectFactory.build(dbman, 'information_object', result.fetchone())
 
-print('Hydrating %d info objects...' % len(ids))
+print(io_with_repo)
 
-info_objs = ObjectFactory.get_by_ids(dbman, 'information_object', ids)
+repo = Repository(dbman)
+repo.hydrate(id=io_with_repo.repository_id)
 
-print('Finished! Iterating over them...')
-
-io_list = []
-
-n = 0
-for io in info_objs: 
-    io_list.append(io)
-
-    n += 1
-    if n % 100 == 0:
-        sys.stdout.write('.')
-        sys.stdout.flush()
-print('Finished!')
+print(repo)

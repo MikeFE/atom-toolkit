@@ -1,12 +1,12 @@
-=====================================================
-== 				ADDITIONAL DEPENDENCIES            ==
-=====================================================  
+===
+ADDITIONAL DEPENDENCIES
+===
 
 - Latest SQLAlchemy 0.9.x (not in pypi): https://bitbucket.org/zzzeek/sqlalchemy/downloads/SQLAlchemy-0.9.0b1.tar.gz
 
-=====================================================
-== 				       NOTES                       ==
-=====================================================  
+===
+NOTES
+===
 
 I decided to go with pymysql for the 'connector' for simplicity's sake. It's easy to install in pip, is supported in Python 3.x, etc.
 In the future we may want to switch to a higher performance connector, as pymysql is written entirely in Python, and might not be as

@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 
 """
-This factory will create AtoM Toolkit model objects.
+This factory will create AtoM Toolkit model objects. The factory is primarily
+used for getting large numbers of objects at once or for building model objects
+from SQLAlchemy query results.
 """
 
 import logging
 import inflection
+
+import utils
 
 from sqlalchemy.sql import select
 from sqlalchemy.sql import and_, or_, not_, tuple_
@@ -38,24 +42,42 @@ class ObjectFactory:
         # column naming conflicts; in this situation alchemy will add
         # 'table_name_' as a prefix:
         prefix = cls_underscored + '_' if cls_underscored + '_' in values.keys()[0] else ''
-        
+
         try:
             if cls_underscored not in db.metadata.tables:
                 raise KeyError
 
             obj = globals()[cls_camelized](db)
+
         except KeyError as e:
             raise Exception('ObjectFactory does not know how to build a %s' % cls_camelized)
 
         for col in obj.cols:
-            val = values[prefix + col] if prefix + col in values else None # .get() not supported
+            val = utils.result_get(values, prefix + col)
             setattr(obj, col, val)
+
+        if obj.has_i18n():
+            if len(prefix) > 0:
+                prefix += 'i18n_' # use_labels=True
+
+            # There might be a case where we're parsing a query result
+            # on an object that has a corresponding i18n table, but the
+            # particular query didn't join with it.
+            if utils.result_get(values, prefix + 'culture') is not None:
+                cul = values[prefix + 'culture']
+                obj.add_culture(cul)
+
+                for col in obj.cols_i18n:
+                    val = utils.result_get(values, prefix + col)
+                    setattr(getattr(obj, cul), col, val)
 
         return obj
 
     @staticmethod
     def get_by_ids(db, class_name, ids, culture='en'):
-        """ Fetches multiple objects at once
+        """ Fetches multiple objects at once, this method is a generator
+
+        :param class_name: the type of object to grab, e.g. 'actor'.
 
         :param ids: a list of the ids to fetch. An empty list means get all 
         objects of this type.

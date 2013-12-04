@@ -28,7 +28,9 @@ class ObjectI18n(Object):
         # Add I18n column names-
         self.cols_i18n = utils.get_col_names(db.table(self.table_name + '_i18n'))
         self.default_culture = default_culture
-        self.has_cultures = []
+        self.has_cultures = set()
+
+        print('i18n table %s' % self.table_name)
 
     def get_str(self, all_variables=False):
         """ Add I18n info to Object.get_str() 
@@ -75,10 +77,13 @@ class ObjectI18n(Object):
         for row in rows:
             cul = row['culture']
 
-            if not hasattr(self, cul):
-                self.has_cultures.append(cul)
-                setattr(self, cul, ValuesI18n())
-
+            self.add_culture(cul)
             for col in self.cols_i18n:
                 setattr(getattr(self, cul), col, row[col])
 
+    def add_culture(self, cul):
+        """ Adds a culture if it doesn't exist, otherwise does nothing """
+
+        if not hasattr(self, cul):
+            self.has_cultures.add(cul)
+            setattr(self, cul, ValuesI18n())
